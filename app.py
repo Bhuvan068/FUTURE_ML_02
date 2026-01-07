@@ -4,9 +4,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.ensemble import RandomForestClassifier
 
 # Page configuration
 st.set_page_config(page_title="Spotify Churn Prediction Dashboard", layout="centered")
@@ -14,7 +11,7 @@ st.set_page_config(page_title="Spotify Churn Prediction Dashboard", layout="cent
 st.title("🎧 Spotify Customer Churn Prediction Dashboard")
 
 # =========================
-# Load models (no caching)
+# Load models
 # =========================
 try:
     model = joblib.load("spotify_churn_model.pkl")
@@ -45,6 +42,7 @@ with st.form("churn_form"):
     submit = st.form_submit_button("Predict Churn")
 
 if submit:
+    # Create input DataFrame
     input_data = pd.DataFrame([{
         "Age": Age,
         "Gender": Gender,
@@ -55,14 +53,19 @@ if submit:
         "music_recc_rating": music_recc_rating
     }])
 
-    # Fill missing columns
+    # Ensure all training columns exist
     for col in preprocessor.feature_names_in_:
         if col not in input_data.columns:
-            input_data[col] = "Unknown"
+            # Unseen categories will be treated as 'Unknown'
+            input_data[col] = "Unknown" if input_data[col].dtype == object else 0
 
+    # Transform input using ColumnTransformer
     X = preprocessor.transform(input_data)
+
+    # Predict churn probability
     churn_prob = model.predict_proba(X)[0][1]
 
+    # Determine risk level
     if churn_prob < 0.33:
         risk = "🟢 Low Risk"
     elif churn_prob < 0.66:
@@ -80,6 +83,8 @@ if submit:
 st.header("📌 Top Churn Drivers")
 importances = model.feature_importances_
 indices = np.argsort(importances)[::-1][:10]
+
+# Safely get top features from feature_names
 top_features = [feature_names[i] for i in indices]
 top_importances = importances[indices]
 
