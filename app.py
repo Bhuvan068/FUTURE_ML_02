@@ -4,31 +4,29 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.ensemble import RandomForestClassifier
 
 # Page configuration
-st.set_page_config(
-    page_title="Spotify Churn Prediction Dashboard",
-    layout="centered"
-)
+st.set_page_config(page_title="Spotify Churn Prediction", layout="centered")
 
 # Title
 st.title("🎧 Spotify Customer Churn Prediction Dashboard")
 
 # =========================
-# Load saved models
+# 1️⃣ Load saved models (no caching)
 # =========================
-@st.cache_resource
-def load_models():
+try:
     model = joblib.load("spotify_churn_model.pkl")
     preprocessor = joblib.load("spotify_preprocessor.pkl")
     feature_names = joblib.load("spotify_feature_names.pkl")
-    return model, preprocessor, feature_names
-
-model, preprocessor, feature_names = load_models()
-st.success("Model & Preprocessor Loaded Successfully ✅")
+    st.success("Model & Preprocessor Loaded Successfully ✅")
+except Exception as e:
+    st.error(f"Error loading model files: {e}")
 
 # =========================
-# 1️⃣ CUSTOMER INPUT FORM
+# 2️⃣ CUSTOMER INPUT FORM
 # =========================
 st.header("🔮 Predict Customer Churn")
 
@@ -86,7 +84,7 @@ if submit:
     st.write("Risk Level:", risk)
 
 # =========================
-# 2️⃣ FEATURE IMPORTANCE
+# 3️⃣ FEATURE IMPORTANCE
 # =========================
 st.header("📌 Top Churn Drivers")
 
@@ -103,7 +101,7 @@ ax1.set_title("Top 10 Features Influencing Customer Churn")
 st.pyplot(fig1)
 
 # =========================
-# 3️⃣ MODEL METRICS
+# 4️⃣ MODEL METRICS
 # =========================
 st.header("📈 Model Performance")
 
@@ -114,9 +112,7 @@ col3.metric("Recall", "0.75")
 col4.metric("F1-Score", "0.80")
 
 st.subheader("Confusion Matrix")
-
-cm = np.array([[29, 8],
-               [17, 50]])
+cm = np.array([[29, 8], [17, 50]])
 
 fig2, ax2 = plt.subplots()
 sns.heatmap(
